@@ -244,9 +244,6 @@ CvPoly.prototype.paint = function ( data )
 
 			ctx.stroke();
 		}
-
-		// Avoid repaint on childs
-		delete attr.points;
 	}
 
 	function evaluate( data, attr )
@@ -282,8 +279,11 @@ CvPoly.prototype.paint = function ( data )
 			// Evaluate child objects
 			for ( n in data )
 			{
-				v = data[ n ];
-				evaluate( v, attr );
+				if ( n != "points" )
+				{
+					v = data[ n ];
+					evaluate( v, attr );
+				}
 			}
 		}
 	}
