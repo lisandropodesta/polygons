@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Canvas Polygon Test</title>
+		<script src="../build/build.js"></script>
+		<style>
+			canvas{
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas" height="450" width="600"></canvas>
+
+		<script>
+
+			var cvpoly = require('html-canvas-poly');
+
+			//
+			// Valid transformation parameters are:
+			//
+			// @scale			Scale for all axis
+			// @scaleX			Scale for x axis
+			// @scaleY			Scale for y axis
+			// @offsetX			Shift for x axis
+			// @offsetY			Shift for y axis
+			// @rotation		Rotation angle in radians
+			// @rotation_deg	Rotation angle in degrees
+			// @refpointX		Reference point for transformations x axis coordinate
+			// @refpointY		Reference point for transformations y axis coordinate
+			// 
+			var data =
+			{
+				// Transformation params
+				"@scale": 1.25,
+				"@offsetX": 0,
+				"@offsetY": 0,
+				"@rotation_deg": 45,
+				"@refpointX": 100,
+				"@refpointY": 100,
+
+				fillStyle: 'blue',
+				strokeStyle: 'red',
+				lineWidth: 4,
+				points: [ [ 10, 300 ], [ 20, 300 ], [ 30, 320 ], [ 0, 320 ], "close" ],
+				x: [
+					{
+						points:
+						[
+							[ 50, 50 ],
+							[ "@100", "@0" ],
+							{ dx: 0, dy: 100 },
+							{ dx: -100, y: 150 }, 
+							"close"
+						]
+					},
+					{
+						points:
+						[
+							{ x: 200, y: 200 },
+							[ "@50", "@0" ],
+							[ "@0", "@50" ],
+							[ "@-50", "@0" ],
+							"close"
+						],
+						lineWidth: 2,
+						fillStyle: 'yellow'
+					},
+					{
+						points:
+						[
+							{ x: 75, y: 200 },
+							[ "@50", "@0" ],
+							[ "@0", "@50" ],
+							[ "@-50", "@0" ],
+							"close"
+						]
+					}
+				]
+			};
+
+			new cvpoly( "canvas" ).paint( data );
+
+		</script>
+	</body>
+</html>
