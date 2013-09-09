@@ -1,0 +1,26 @@
+- 1) Coding style: Tratá de que siempre las dependencias del modulo estén en las primeras líneas del código. 
+Por ej: CanvasAttr. Todo lo que es esperado que sea estático se escribe STATIC_VARS, todo lo que son variables privadas pero que pueden cambiar se escribe variablePrivada.
+Todo lo que es esperado ser constructor se escribe PrototypeClass.
+
+- 2) Use of components: Tenés un indexOf y un isArray... buscá component/type y component/indexof y usalos en su lugar.
+Dejá en TU compononent solo el código que hace a tu component, y cualquier otro recurso delegalo en otras librerias. 
+Eso facilita la lectura y comprensión de lo que hace tu código en sí. No hace falta demostrar que sabes programar un isArray o un indexOf (está claro que lo sabés, y es perfecto que sepas hacerlo)... 
+But again, si sabés delegarlo en la mejor libreria, implica también que entendés lo que estás haciendo y lo que busca tu component.
+
+- 3) Naming: Todo component espera laburar sobre html canvas, thats the general rule... el nombre del component simplificalo, para hacerlo viralizable. 
+Yo lo llamaría "poly-canvas" a secas. O algo más simple aún. Esto no es tan importante, pero ayuda para que cuando hagas el "require('poly-canvas')" sea más significativo para quien lo usa. 
+Canvas es casi un alias de HTML5.
+
+- 4) Buenas prácticas: Si tenes un constructor, y guardas una referencia al contexto en la instancia que creas, tratá de hacer parte del prototype las funciones que usan de dicho contexto... 
+por ej: dentro de .prototype.paint tenes "getCoord" que tranquilamente podría ser parte del prototype y evitar tener que pasarle el ctx cada vez que la quieras llamar. 
+Menos parámetros recibe una función, más claro es lo que hace.
+
+- 5) More code styling: Indentación por 2 espacios. Los if y las funciones tienen que abrir llaves en la misma linea de la función. 
+En los if, cambiar "typeof el === ´string´" por " 'string === type(el)", es decir, siempre el valor estático primero.
+
+- 6) Simpler API: Simplificar la API del component exponiendo métodos públicos y reduciendo las cadenas de scope a solo 1. 
+Es decir, no crear funciones dentro de funciones. Además documentar los métodos. Explicar qué reciben y que devuelven. 
+Usar components de ejemplo en gh://component/<blah>
+
+- 7) Documentation: README tiene que permitir entender la api y como usarla sin necesidad de tener que leer el código. 
+Pero a la vez, según 6); al leer el código tiene que quedar tanto o más claro que al leer el README.

@@ -1,295 +1,283 @@
 //
-// Export
+// Dependencies
 //
-module.exports = CvPoly;
+var canvasTool = require( 'canvas-tool' );
+var type = require( 'type-tool' );
 
 //
-// Main class function
+// Exports
 //
-function CvPoly( e )
-{
-	var
-		cv;
+module.exports.paint = paint;
+module.exports.getPrimitives = getPrimitives;
 
-	if ( !( this instanceof CvPoly ) )
-	{
-		return new CvPoly( e );
-	}
+//
+// Paints all polygons specified at data
+//
+function paint( data, target ) {
 
-	// Get canvas element
-	cv = ( e && typeof e === "string" ?
-		cv = document.getElementById( e ) :
-		e );
-
-	// Get canvas context
-	this.ctx = ( cv && cv.getContext && cv.getContext( "2d" ) );
-	if ( !this.ctx )
-	{
-		throw new TypeError( 'CvPoly() requires an element' );
-	}
+  ( new Polygons() ).paint( data, target ) ;
 }
 
-var CanvasAttr =
-{
-	fillStyle: "fillStyle",
-	strokeStyle: "strokeStyle",
-	lineWidth: "lineWidth"
-};
-
 //
-// Paint
+// Get painting primitives
 //
-CvPoly.prototype.paint = function ( data )
-{
-	var
-		ctx = this.ctx;
+function getPrimitives ( data ) {
+  var
+    pri = canvasTool.getPrimitives();
 
-	function isArray( o )
-	{
-		return Object.prototype.toString.call( o ) === "[object Array]";
-	}
+  ( new Polygons() ).paint( data, pri );
 
-	function indexOf( arr, e )
-	{
-		for ( var i = 0; i < arr.length; i++ )
-		{
-			if ( i in arr && arr[ i ] === e )
-			{
-				return i;
-			}
-			return -1;
-		}
-	}
-
-	function contains( arr, e )
-	{
-		return indexOf( arr, e ) >= 0;
-	}
-
-	//
-	// Calculates a point coordinate based on reference, context and last point 
-	//
-	function getCoord( ref, name, context, lastpt )
-	{
-		var
-			r, v;
-
-		function chk_lastpt()
-		{
-			if ( !lastpt )
-			{
-				throw new Error( "Bad coordinate reference to last point" );
-			}
-		}
-
-		if ( typeof ref === "number" )
-		{
-			return ref;
-		}
-		else if ( typeof ref === "string" )
-		{
-			v = 0;
-			if ( ref[ 0 ] == "@" )
-			{
-				chk_lastpt();
-				v = lastpt[ name ];
-				ref = ref.slice( 1 );
-			}
-
-			r = parseFloat( ref );
-			if ( !isNaN( v ) )
-			{
-				return v + r;
-			}
-		}
-		else if ( typeof ref === "function" )
-		{
-			// TO-DO
-		}
-		else if ( typeof ref === "object" )
-		{
-			if ( name in ref )
-			{
-				return getCoord( ref[ name ], name, context, lastpt );
-			}
-
-			if ( ( "d" + name ) in ref )
-			{
-				chk_lastpt();
-				return lastpt[ name ] + getCoord( ref[ "d" + name ], name, context, lastpt );
-			}
-		}
-
-		throw new Error( "Bad coordinate: " + ref );
-	}
-
-	function getPoint( ref, context, pt_arr )
-	{
-		var
-			lastpt, res = {};
-
-		if ( typeof ref === "string" )
-		{
-			if ( ref == "close" )
-			{
-				return pt_arr[ 0 ];
-			}
-
-			// TO-DO: seek stored points of name <ref> in context
-		}
-		else if ( typeof ref === "function" )
-		{
-			// TO-DO: evaluate calculated coordinates as functions
-		}
-		else
-		{
-			lastpt = pt_arr.length ? pt_arr[ pt_arr.length - 1 ] : null;
-
-			if ( isArray( ref ) )
-			{
-				if ( ref.length >= 2 )
-				{
-					return { x: getCoord( ref[ 0 ], 'x', context, lastpt ), y: getCoord( ref[ 1 ], 'y', context, lastpt ) };
-				}
-			}
-			else if ( typeof ref === "object" )
-			{
-				return { x: getCoord( ref, 'x', context, lastpt ), y: getCoord( ref, 'y', context, lastpt ) };
-			}
-		}
-
-		throw new Error( "Bad point: " + ref );
-	}
-
-	function transformPoint( pt, attr )
-	{
-		var
-			x, y, sx, sy, rx, ry, rot, h, a;
-
-		x = pt.x;
-		y = pt.y;
-
-		sx = attr[ "@scaleX" ] || attr[ "@scale" ] || 1;
-		sy = attr[ "@scaleY" ] || attr[ "@scale" ] || 1;
-		rx = attr[ "@refpointX" ] || 0;
-		ry = attr[ "@refpointY" ] || 0;
-		rot = attr[ "@rotation" ] || ( ( attr[ "@rotation_deg" ] || 0 ) * Math.PI / 180 );
-
-		// TO-DO: Support nested transformations
-
-		// Scaling
-		if ( sx != 1 )
-		{
-			x = rx + ( x - rx ) * sx;
-		}
-		if ( sy != 1 )
-		{
-			y = ry + ( y - ry ) * sy;
-		}
-
-		// Rotation
-		if ( rot )
-		{
-			x -= rx;
-			y -= ry;
-			h = Math.sqrt( x * x + y * y );
-			a = Math.atan2( y, x ) - rot;
-			x = rx + h * Math.cos( a );
-			y = ry + h * Math.sin( a );
-		}
-
-		// Offset
-		x += ( attr[ "@offsetX" ] || 0 );
-		y += ( attr[ "@offsetY" ] || 0 );
-
-		return { x: x, y: y };
-	}
-
-	function paint( attr )
-	{
-		var
-			i, n, v, pt,
-			pt_arr = [];
-
-		if ( attr.points && attr.points.length >= 0 )
-		{
-			// Resolve points coordinates
-			for ( i = 0; i < attr.points.length; i++ )
-			{
-				pt_arr[ i ] = getPoint( attr.points[ i ], attr, pt_arr );
-			}
-
-			// Assign context attributes
-			for ( n in attr )
-			{
-				v = attr[ n ];
-				if ( CanvasAttr[ n ] && !isArray( v ) && typeof v !== "object" )
-				{
-					ctx[ CanvasAttr[ n ] ] = v;
-				}
-			}
-
-			// Paint points
-			ctx.beginPath();
-			for ( i = 0; i < pt_arr.length; i++ )
-			{
-				pt = transformPoint( pt_arr[ i ], attr );
-				ctx[ !i ? "moveTo" : "lineTo" ]( pt.x, pt.y );
-			}
-
-			if ( attr.fillStyle )
-			{
-				ctx.fill();
-			}
-
-			ctx.stroke();
-		}
-	}
-
-	function evaluate( data, attr )
-	{
-		var
-			i, n, v, attr_copy;
-
-		if ( isArray( data ) )
-		{
-			for ( i = 0; i < data.length; i++ )
-			{
-				attr_copy = {};
-				for ( n in attr )
-				{
-					attr_copy[ n ] = attr[ n ];
-				}
-
-				evaluate( data[ i ], attr_copy );
-			}
-		}
-		else if ( typeof data === "object" )
-		{
-			// Store attr asignments
-			for ( n in data )
-			{
-				v = data[ n ];
-				attr[ n ] = v;
-			}
-
-			// Paint main object
-			paint( attr );
-
-			// Evaluate child objects
-			for ( n in data )
-			{
-				if ( n != "points" )
-				{
-					v = data[ n ];
-					evaluate( v, attr );
-				}
-			}
-		}
-	}
-
-	if ( data )
-	{
-		evaluate( data, {} );
-	}
+  return pri;
 }
+
+//
+// Polygons constructor
+//
+function Polygons( target ) {
+}
+
+//
+// Evaluates data structure and paints polygons
+//
+Polygons.prototype.paint = function ( data, target ) {
+
+  if ( data ) {
+
+    // Assign context
+    this.context = canvasTool.getContext( target );
+    if ( !this.context ) {
+      throw new TypeError( "Polygons.paint() requires a canvas" );
+    }
+
+    // Initialize reference points
+    this.refPoints = {};
+
+    // Evaluates data
+    this.evaluate( data, {} );
+  }
+}
+
+//
+// Evaluates data structure and paints polygons
+//
+Polygons.prototype.evaluate = function ( data, attr ) {
+  var
+    i, n, v, t, attr_copy;
+
+  t = type.get( data );
+  if ( t.isArray ) {
+    // Evaluates each element in a separate attributes context
+    for ( i = 0; i < data.length; i++ ) {
+      attr_copy = {};
+      for ( n in attr ) {
+        attr_copy[ n ] = attr[ n ];
+      }
+
+      this.evaluate( data[ i ], attr_copy );
+    }
+  }
+  else if ( t.isObject ) {
+    // Stores attr asignments
+    for ( n in data ) {
+      v = data[ n ];
+      attr[ n ] = v;
+    }
+
+    // Paints main object
+    this.paintPolygon( attr );
+
+    // Evaluates child objects
+    for ( n in data ) {
+      if ( "polygon" != n && "points" != n ) {
+        v = data[ n ];
+        this.evaluate( v, attr );
+      }
+    }
+  }
+}
+
+//
+// Paints a single polygon
+//
+Polygons.prototype.paintPolygon = function ( attr ) {
+  var
+    i, n, v, t, pt, ctx,
+    pt_arr = [];
+
+  ctx = this.context;
+
+  // Resolve reference points coordinates
+  if ( attr.refPoints ) {
+    for ( i = 0; i < attr.refPoints.length; i++ ) {
+      pt = attr.refPoints[ i ];
+      if ( pt.name && type.isString( pt.name ) ) {
+        this.refPoints[ pt.name ] = this.getPoint( pt, attr, null );
+      }
+    }
+  }
+
+  if ( attr.polygon && attr.polygon.length >= 0 ) {
+    // Resolve polygon coordinates
+    for ( i = 0; i < attr.polygon.length; i++ ) {
+      pt_arr[ i ] = this.getPoint( attr.polygon[ i ], attr, pt_arr );
+    }
+
+    // Assign attributes
+    for ( n in attr ) {
+      v = attr[ n ];
+      t = type.get( v );
+      if ( canvasTool.getAttr( n ) && !t.isArray && !t.isObject ) {
+        ctx[ canvasTool.getAttr( n ) ] = v;
+      }
+    }
+
+    // Paints polygon
+    ctx.beginPath();
+    for ( i = 0; i < pt_arr.length; i++ ) {
+      pt = this.transformPoint( pt_arr[ i ], attr );
+      ctx[ !i ? "moveTo" : "lineTo" ]( pt.x, pt.y );
+    }
+
+    if ( attr.fillStyle ) {
+      ctx.fill();
+    }
+
+    ctx.stroke();
+  }
+}
+
+//
+// Calculates a point coordinates
+//
+Polygons.prototype.getPoint = function ( ref, attr, pt_arr ) {
+  var
+    t, lastpt,
+    res = {};
+
+  t = type.get( ref );
+  if ( t.isString ) {
+    if ( pt_arr && ref == "close" ) {
+      return pt_arr[ 0 ];
+    }
+
+    // Seek stored points of name <ref>
+    if ( this.refPoints[ ref ] ) {
+      return this.refPoints[ ref ];
+    }
+  }
+  else if ( t.isFunction ) {
+    // TO-DO: evaluate calculated coordinates as functions
+  }
+  else {
+    lastpt = pt_arr && pt_arr.length ? pt_arr[ pt_arr.length - 1 ] : null;
+
+    if ( t.isArray ) {
+      if ( ref.length >= 2 ) {
+        return { x: this.getCoord( ref[ 0 ], "x", attr, lastpt ), y: this.getCoord( ref[ 1 ], "y", attr, lastpt ) };
+      }
+    }
+    else if ( t.isObject ) {
+      return { x: this.getCoord( ref, "x", attr, lastpt ), y: this.getCoord( ref, "y", attr, lastpt ) };
+    }
+  }
+
+  throw new Error( "Bad point: " + ref );
+}
+
+//
+// Calculates a point coordinate based on reference, attr and last point 
+//
+Polygons.prototype.getCoord = function ( ref, name, attr, lastpt ) {
+  var
+    t, r, v, refpt;
+
+  function chk_lastpt() {
+    if ( !lastpt ) {
+      throw new Error( "Bad coordinate reference to last point" );
+    }
+  }
+
+  t = type.get( ref );
+  if ( t.isNumber ) {
+    return ref;
+  }
+  else if ( t.isString ) {
+    v = 0;
+    if ( "@" == ref[ 0 ] ) {
+      chk_lastpt();
+      v = lastpt[ name ];
+      ref = ref.slice( 1 );
+    }
+
+    r = parseFloat( ref );
+    if ( !isNaN( v ) ) {
+      return v + r;
+    }
+  }
+  else if ( t.isFunction ) {
+    // TO-DO
+  }
+  else if ( t.isObject ) {
+    if ( name in ref ) {
+      return this.getCoord( ref[ name ], name, attr, lastpt );
+    }
+
+    if ( ( "d" + name ) in ref ) {
+      if ( "ref" in ref ) {
+        refpt = this.getPoint( ref[ "ref" ], attr, null );
+      }
+      else {
+        chk_lastpt();
+        refpt = lastpt;
+      }
+
+      return refpt[ name ] + this.getCoord( ref[ "d" + name ], name, attr, refpt );
+    }
+  }
+
+  throw new Error( "Bad coordinate: " + ref );
+}
+
+//
+// Transform point coordinates in an attribute context
+//
+Polygons.prototype.transformPoint = function ( pt, attr ) {
+  var
+    x, y, sx, sy, rx, ry, rot, h, a;
+
+  x = pt.x;
+  y = pt.y;
+
+  sx = attr[ "@scaleX" ] || attr[ "@scale" ] || 1;
+  sy = attr[ "@scaleY" ] || attr[ "@scale" ] || 1;
+  rx = attr[ "@refpointX" ] || 0;
+  ry = attr[ "@refpointY" ] || 0;
+  rot = attr[ "@rotation" ] || ( ( attr[ "@rotation_deg" ] || 0 ) * Math.PI / 180 );
+
+  // TO-DO: Support nested transformations
+
+  // Scaling
+  if ( sx != 1 ) {
+    x = rx + ( x - rx ) * sx;
+  }
+  if ( sy != 1 ) {
+    y = ry + ( y - ry ) * sy;
+  }
+
+  // Rotation
+  if ( rot ) {
+    x -= rx;
+    y -= ry;
+    h = Math.sqrt( x * x + y * y );
+    a = Math.atan2( y, x ) - rot;
+    x = rx + h * Math.cos( a );
+    y = ry + h * Math.sin( a );
+  }
+
+  // Offset
+  x += ( attr[ "@offsetX" ] || 0 );
+  y += ( attr[ "@offsetY" ] || 0 );
+
+  return { x: x, y: y };
+}
+

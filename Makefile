@@ -1,7 +1,3 @@
-# 
-# html-canvas-poly Makefile
-# 
-
 build: components index.js
 	@component build --dev
 

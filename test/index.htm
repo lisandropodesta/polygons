@@ -9,11 +9,12 @@
 		</style>
 	</head>
 	<body>
-		<canvas id="canvas" height="450" width="600"></canvas>
+		<canvas id="canvas1" height="450" width="600"></canvas>
+		<canvas id="canvas2" height="450" width="600"></canvas>
 
 		<script>
 
-			var cvpoly = require('html-canvas-poly');
+			var polygons = require( "html-canvas-poly" );
 
 			var data =
 			{
@@ -30,44 +31,59 @@
 				// @refpointX		Reference point for transformations x axis coordinate
 				// @refpointY		Reference point for transformations y axis coordinate
 				// 
-				"@scale": 1.25,
+				"@scale": 1,
 				"@offsetX": 0,
 				"@offsetY": 0,
 				"@rotation_deg": 45,
 				"@refpointX": 100,
 				"@refpointY": 100,
 
-				fillStyle: 'blue',
-				strokeStyle: 'red',
+				fillStyle: "blue",
+				strokeStyle: "red",
 				lineWidth: 4,
-				points: [ [ 10, 300 ], [ 20, 300 ], [ 30, 320 ], [ 0, 320 ], "close" ],
+				refPoints:
+				[
+					{ name: "p1", x: 50, y: 50 },
+					{ name: "p2", x: 200, y: 200 }
+				],
+				polygon:
+				[
+					[ 10, 300 ],
+					[ "@30", "@30" ],
+					[ "@-30", "@0" ]
+				],
 				x: [
 					{
-						points:
+						fillStyle: null,
+						polygon:
 						[
-							[ 50, 50 ],
+							"p1",
 							[ "@100", "@0" ],
 							{ dx: 0, dy: 100 },
-							{ dx: -100, y: 150 }, 
-							"close"
+							{ ref: "p1", dx: 0, y: 150 },
+							"p1"
 						]
 					},
 					{
-						points:
+						refPoints:
 						[
-							{ x: 200, y: 200 },
+							{ name: "p3", x: 75, y: 200 }
+						],
+						polygon:
+						[
+							"p2",
 							[ "@50", "@0" ],
 							[ "@0", "@50" ],
 							[ "@-50", "@0" ],
 							"close"
 						],
 						lineWidth: 2,
-						fillStyle: 'yellow'
+						fillStyle: "yellow"
 					},
 					{
-						points:
+						polygon:
 						[
-							{ x: 75, y: 200 },
+							"p3",
 							[ "@50", "@0" ],
 							[ "@0", "@50" ],
 							[ "@-50", "@0" ],
@@ -77,7 +93,11 @@
 				]
 			};
 
-			new cvpoly( "canvas" ).paint( data );
+			polygons.paint( data, "canvas1" );
+
+			data[ "@scale" ] = 0.5;
+			data[ "@rotation_deg" ] = 0;
+			polygons.getPrimitives( data ).paint( "canvas2" );
 
 		</script>
 	</body>

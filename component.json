@@ -8,6 +8,8 @@
   "version": "0.0.1",
   "keywords": ["HTML5", "canvas", "polygon", "ui"],
   "dependencies": {
+    "lisandropodesta/canvas-tool": "*",
+    "lisandropodesta/type-tool": "*"
   },
   "development": {
   },
