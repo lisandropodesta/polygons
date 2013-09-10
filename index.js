@@ -63,7 +63,7 @@ function polygonsGetPrimitives( data ) {
 //
 // Polygons constructor
 //
-function Polygons( target ) {
+function Polygons() {
 }
 
 //
