@@ -1,19 +1,49 @@
 //
 // Dependencies
 //
-var canvasTool = require( 'canvas-tool' );
-var type = require( 'type-tool' );
+var
+  canvasTool = require( 'canvas-tool' ),
+  type = require( 'type-tool' );
+
+//
+// External references
+//
+var
+  typeGet = type.get,
+  isString = type.isString,
+  getAttr = canvasTool.getAttr,
+  getContext = canvasTool.getContext,
+  getPrimitives = canvasTool.getPrimitives;
 
 //
 // Exports
 //
-module.exports.paint = paint;
-module.exports.getPrimitives = getPrimitives;
+module.exports.paint = polygonsPaint;
+module.exports.getPrimitives = polygonsGetPrimitives;
+
+//
+// Polygon painting attributes
+//
+var POLYGON_ATTR = {
+  scale: true,          // Scale for all axis
+  scaleX: true,         // Scale for x axis
+  scaleY: true,         // Scale for y axis
+  offsetX: true,        // Shift for x axis
+  offsetY: true,        // Shift for y axis
+  rotation: true,       // Rotation angle in radians
+  rotationDeg: true,    // Rotation angle in degrees
+  refPointX: true,      // Reference point for transformations x axis coordinate
+  refPointY: true,      // Reference point for transformations y axis coordinate
+
+  refPoints: false,     // Reference points to be used by polygons
+  polygon: false,       // Array of points to be painted
+  childs: false         // Contains child objects to be painted
+};
 
 //
 // Paints all polygons specified at data
 //
-function paint( data, target ) {
+function polygonsPaint( data, target ) {
 
   ( new Polygons() ).paint( data, target ) ;
 }
@@ -21,9 +51,9 @@ function paint( data, target ) {
 //
 // Get painting primitives
 //
-function getPrimitives ( data ) {
+function polygonsGetPrimitives( data ) {
   var
-    pri = canvasTool.getPrimitives();
+    pri = getPrimitives();
 
   ( new Polygons() ).paint( data, pri );
 
@@ -39,12 +69,12 @@ function Polygons( target ) {
 //
 // Evaluates data structure and paints polygons
 //
-Polygons.prototype.paint = function ( data, target ) {
+Polygons.prototype.paint = function( data, target ) {
 
   if ( data ) {
 
     // Assign context
-    this.context = canvasTool.getContext( target );
+    this.context = getContext( target );
     if ( !this.context ) {
       throw new TypeError( "Polygons.paint() requires a canvas" );
     }
@@ -60,38 +90,37 @@ Polygons.prototype.paint = function ( data, target ) {
 //
 // Evaluates data structure and paints polygons
 //
-Polygons.prototype.evaluate = function ( data, attr ) {
+Polygons.prototype.evaluate = function( data, attr ) {
   var
-    i, n, v, t, attr_copy;
+    i, n, t, attr_copy;
 
-  t = type.get( data );
+  t = typeGet( data );
   if ( t.isArray ) {
     // Evaluates each element in a separate attributes context
     for ( i = 0; i < data.length; i++ ) {
       attr_copy = {};
       for ( n in attr ) {
-        attr_copy[ n ] = attr[ n ];
+        if ( false !== POLYGON_ATTR[ n ] ) {
+          attr_copy[ n ] = attr[ n ];
+        }
       }
 
       this.evaluate( data[ i ], attr_copy );
     }
   }
   else if ( t.isObject ) {
+
     // Stores attr asignments
     for ( n in data ) {
-      v = data[ n ];
-      attr[ n ] = v;
+      attr[ n ] = data[ n ];
     }
 
     // Paints main object
     this.paintPolygon( attr );
 
     // Evaluates child objects
-    for ( n in data ) {
-      if ( "polygon" != n && "points" != n ) {
-        v = data[ n ];
-        this.evaluate( v, attr );
-      }
+    if ( data.childs ) {
+      this.evaluate( data.childs, attr );
     }
   }
 }
@@ -99,35 +128,28 @@ Polygons.prototype.evaluate = function ( data, attr ) {
 //
 // Paints a single polygon
 //
-Polygons.prototype.paintPolygon = function ( attr ) {
+Polygons.prototype.paintPolygon = function( attr ) {
   var
-    i, n, v, t, pt, ctx,
-    pt_arr = [];
-
-  ctx = this.context;
+    i, n, v, t, pt,
+    pt_arr = [],
+    ctx = this.context;
 
   // Resolve reference points coordinates
   if ( attr.refPoints ) {
-    for ( i = 0; i < attr.refPoints.length; i++ ) {
-      pt = attr.refPoints[ i ];
-      if ( pt.name && type.isString( pt.name ) ) {
-        this.refPoints[ pt.name ] = this.getPoint( pt, attr, null );
-      }
-    }
+    this.resolvePoints( attr.refPoints, attr );
   }
 
-  if ( attr.polygon && attr.polygon.length >= 0 ) {
+  if ( attr.polygon && 0 <= attr.polygon.length ) {
+
     // Resolve polygon coordinates
-    for ( i = 0; i < attr.polygon.length; i++ ) {
-      pt_arr[ i ] = this.getPoint( attr.polygon[ i ], attr, pt_arr );
-    }
+    pt_arr = this.resolvePoints( attr.polygon, attr );
 
     // Assign attributes
     for ( n in attr ) {
       v = attr[ n ];
-      t = type.get( v );
-      if ( canvasTool.getAttr( n ) && !t.isArray && !t.isObject ) {
-        ctx[ canvasTool.getAttr( n ) ] = v;
+      t = typeGet( v );
+      if ( getAttr( n ) && !t.isArray && !t.isObject ) {
+        ctx[ getAttr( n ) ] = v;
       }
     }
 
@@ -147,16 +169,35 @@ Polygons.prototype.paintPolygon = function ( attr ) {
 }
 
 //
+// Resolve points coordinates
+//
+Polygons.prototype.resolvePoints = function( arr, attr ) {
+  var
+    i, pt,
+    res = [];
+
+  for ( i = 0; i < arr.length; i++ ) {
+    pt = arr[ i ];
+    res[ i ] = this.getPoint( pt, attr, res );
+    if ( isString( pt.name ) && pt.name.length ) {
+      this.refPoints[ pt.name ] = res[ i ];
+    }
+  }
+
+  return res;
+}
+
+//
 // Calculates a point coordinates
 //
-Polygons.prototype.getPoint = function ( ref, attr, pt_arr ) {
+Polygons.prototype.getPoint = function( ref, attr, pt_arr ) {
   var
     t, lastpt,
     res = {};
 
-  t = type.get( ref );
+  t = typeGet( ref );
   if ( t.isString ) {
-    if ( pt_arr && ref == "close" ) {
+    if ( pt_arr && "close" == ref ) {
       return pt_arr[ 0 ];
     }
 
@@ -172,7 +213,7 @@ Polygons.prototype.getPoint = function ( ref, attr, pt_arr ) {
     lastpt = pt_arr && pt_arr.length ? pt_arr[ pt_arr.length - 1 ] : null;
 
     if ( t.isArray ) {
-      if ( ref.length >= 2 ) {
+      if ( 2 <= ref.length ) {
         return { x: this.getCoord( ref[ 0 ], "x", attr, lastpt ), y: this.getCoord( ref[ 1 ], "y", attr, lastpt ) };
       }
     }
@@ -184,27 +225,27 @@ Polygons.prototype.getPoint = function ( ref, attr, pt_arr ) {
   throw new Error( "Bad point: " + ref );
 }
 
+function assertPoint( point ) {
+  if ( !point ) {
+    throw new Error( "No reference point" );
+  }
+}
+
 //
 // Calculates a point coordinate based on reference, attr and last point 
 //
-Polygons.prototype.getCoord = function ( ref, name, attr, lastpt ) {
+Polygons.prototype.getCoord = function( ref, name, attr, lastpt ) {
   var
     t, r, v, refpt;
 
-  function chk_lastpt() {
-    if ( !lastpt ) {
-      throw new Error( "Bad coordinate reference to last point" );
-    }
-  }
-
-  t = type.get( ref );
+  t = typeGet( ref );
   if ( t.isNumber ) {
     return ref;
   }
   else if ( t.isString ) {
     v = 0;
     if ( "@" == ref[ 0 ] ) {
-      chk_lastpt();
+      assertPoint( lastpt );
       v = lastpt[ name ];
       ref = ref.slice( 1 );
     }
@@ -223,14 +264,8 @@ Polygons.prototype.getCoord = function ( ref, name, attr, lastpt ) {
     }
 
     if ( ( "d" + name ) in ref ) {
-      if ( "ref" in ref ) {
-        refpt = this.getPoint( ref[ "ref" ], attr, null );
-      }
-      else {
-        chk_lastpt();
-        refpt = lastpt;
-      }
-
+      refpt = ( "ref" in ref ? this.getPoint( ref[ "ref" ], attr, null ) : lastpt );
+      assertPoint( refpt );
       return refpt[ name ] + this.getCoord( ref[ "d" + name ], name, attr, refpt );
     }
   }
@@ -241,18 +276,18 @@ Polygons.prototype.getCoord = function ( ref, name, attr, lastpt ) {
 //
 // Transform point coordinates in an attribute context
 //
-Polygons.prototype.transformPoint = function ( pt, attr ) {
+Polygons.prototype.transformPoint = function( pt, attr ) {
   var
     x, y, sx, sy, rx, ry, rot, h, a;
 
   x = pt.x;
   y = pt.y;
 
-  sx = attr[ "@scaleX" ] || attr[ "@scale" ] || 1;
-  sy = attr[ "@scaleY" ] || attr[ "@scale" ] || 1;
-  rx = attr[ "@refpointX" ] || 0;
-  ry = attr[ "@refpointY" ] || 0;
-  rot = attr[ "@rotation" ] || ( ( attr[ "@rotation_deg" ] || 0 ) * Math.PI / 180 );
+  sx = attr.scaleX || attr.scale || 1;
+  sy = attr.scaleY || attr.scale || 1;
+  rx = attr.refPointX || 0;
+  ry = attr.refPointY || 0;
+  rot = attr.rotation || ( ( attr.rotationDeg || 0 ) * Math.PI / 180 );
 
   // TO-DO: Support nested transformations
 
@@ -275,8 +310,8 @@ Polygons.prototype.transformPoint = function ( pt, attr ) {
   }
 
   // Offset
-  x += ( attr[ "@offsetX" ] || 0 );
-  y += ( attr[ "@offsetY" ] || 0 );
+  x += ( attr.offsetX || 0 );
+  y += ( attr.offsetY || 0 );
 
   return { x: x, y: y };
 }

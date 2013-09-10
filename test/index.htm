@@ -14,29 +14,19 @@
 
 		<script>
 
-			var polygons = require( "html-canvas-poly" );
+			var polygons = require( "polygons" );
 
 			var data =
 			{
 				//
 				// Transformation params
 				//
-				// @scale			Scale for all axis
-				// @scaleX			Scale for x axis
-				// @scaleY			Scale for y axis
-				// @offsetX			Shift for x axis
-				// @offsetY			Shift for y axis
-				// @rotation		Rotation angle in radians
-				// @rotation_deg	Rotation angle in degrees
-				// @refpointX		Reference point for transformations x axis coordinate
-				// @refpointY		Reference point for transformations y axis coordinate
-				// 
-				"@scale": 1,
-				"@offsetX": 0,
-				"@offsetY": 0,
-				"@rotation_deg": 45,
-				"@refpointX": 100,
-				"@refpointY": 100,
+				scale: 1,
+				offsetX: 0,
+				offsetY: 0,
+				rotationDeg: 45,
+				refPointX: 100,
+				refPointY: 100,
 
 				fillStyle: "blue",
 				strokeStyle: "red",
@@ -52,7 +42,7 @@
 					[ "@30", "@30" ],
 					[ "@-30", "@0" ]
 				],
-				x: [
+				childs: [
 					{
 						fillStyle: null,
 						polygon:
@@ -95,8 +85,8 @@
 
 			polygons.paint( data, "canvas1" );
 
-			data[ "@scale" ] = 0.5;
-			data[ "@rotation_deg" ] = 0;
+			data.scale = 0.5;
+			data.rotationDeg = 0;
 			polygons.getPrimitives( data ).paint( "canvas2" );
 
 		</script>

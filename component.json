@@ -2,9 +2,9 @@
   "author": {
     "name": "Lisandro Podestá"
   },
-  "name": "html-canvas-poly",
-  "repo": "lisandropodesta/html-canvas-poly",
-  "description": "HTML5 canvas polygon support",
+  "name": "polygons",
+  "repo": "lisandropodesta/polygons",
+  "description": "HTML5 polygon drawing support",
   "version": "0.0.1",
   "keywords": ["HTML5", "canvas", "polygon", "ui"],
   "dependencies": {
