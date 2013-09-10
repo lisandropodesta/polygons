@@ -8,6 +8,7 @@
   "version": "0.0.1",
   "keywords": ["HTML5", "canvas", "polygon", "ui"],
   "dependencies": {
+    "component/autoscale-canvas": "*",
     "lisandropodesta/canvas-tool": "*",
     "lisandropodesta/type-tool": "*"
   },

@@ -12,14 +12,33 @@ HTML5 polygon drawing support
 Paints polygons specified on data into target.
 
  * data: data structure to paint, see details below
- * target: one of canvas element ID, canvas element or canvas context
+ * target: canvas element ID or canvas element
 
+Simple box example:
 ```javascript
 var polygons = require( "polygons" );
 var data = { polygon: [ [ 10, 10 ], [ "@10", "@0" ], [ "@0", "@10" ], [ "@-10", "@0" ], "close" ] };
 polygons.paint( data, "canvas_element" );
 ```
 
+Complex example:
+```javascript
+var polygons = require( "polygons" );
+var data = {
+  scale: 1.25, offsetX: 10, offsetY: 20, rotationDeg: 45, refPointX: 100, refPointY: 100,
+  fillStyle: "blue", strokeStyle: "red", lineWidth: 4,
+
+  refPoints: [ { name: "p1", x: 50, y: 50 }, { name: "p2", x: 200, y: 200 } ],
+  polygon: [ [ 10, 300 ], [ "@30", "@30" ], [ "@-30", "@0" ] ],
+  childs: [
+    { polygon: [ "p1", [ "@100", "@0" ], { dx: 0, dy: 100 }, { ref: "p1", dx: 0, y: 150 }, "p1" ], fillStyle: null },
+    { refPoints: [ { name: "p3", x: 75, y: 200 } ], polygon: [ "p2", [ "@50", "@0" ], [ "@0", "@50" ], [ "@-50", "@0" ], "close" ], lineWidth: 2, fillStyle: "yellow" },
+    { polygon: [ "p3", [ "@50", "@0" ], [ "@0", "@50" ], [ "@-50", "@0" ], "close" ] }
+  ]
+};
+
+polygons.paint( data, "canvas_element" );
+```
 
 ### .getPrimitives( data )
 
@@ -111,7 +130,7 @@ A point specified as an object supports these properties:
  * dy: specifies the y coordinate incrementally from the reference point
  * ref: specifies the reference point used instead of the last point painted
 
-Valid arrays of points are:
+Valid examples are:
 ```javascript
   [ 
     { name: "point1", x: 10, y: 10 },

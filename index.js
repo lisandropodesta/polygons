@@ -2,6 +2,7 @@
 // Dependencies
 //
 var
+  autoscale = require( 'autoscale-canvas' ),
   canvasTool = require( 'canvas-tool' ),
   type = require( 'type-tool' );
 
