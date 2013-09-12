@@ -15,35 +15,16 @@
 
 		<script>
 
-			var polygons = require( "polygons" );
+			var polygons = require( 'polygons' );
 
 			var sample1 = [
 				{
-					shape: 'rect',
-					position: [ 10, 10 ],
-					width: 200,
-					height: 100,
-					fillStyle: 'green',
-					strokeStyle: 'blue',
-					lineWidth: 2,
-					rotationDeg: 5,
-					refPointX: 110,
-					refPointY: 60
+					shape: 'rect', position: [ 10, 10 ], width: 200, height: 100,
+					fillStyle: 'green', strokeStyle: 'blue', lineWidth: 2,
+					rotationDeg: 5, refPointX: 110, refPointY: 60
 				},
-				{
-					shape: 'circle',
-					position: [ 110, 60 ],
-					radius: 40,
-					fillStyle: 'white'
-				},
-				{
-					shape: 'arc',
-					position: [ 170, 60 ],
-					radius: 20,
-					startAngleDeg: 0,
-					endAngleDeg: 90,
-					fillStyle: null
-				}
+				{ shape: 'circle', position: [ 110, 60 ], radius: 40, fillStyle: 'white' },
+				{ shape: 'arc', position: [ 170, 60 ], radius: 20, startAngleDeg: 0, endAngleDeg: 90, fillStyle: null }
 			];
 			polygons.paint( sample1, 'canvas1' );
 
@@ -59,70 +40,36 @@
 				refPointX: 100,
 				refPointY: 100,
 
-				fillStyle: "blue",
-				strokeStyle: "red",
+				fillStyle: 'blue',
+				strokeStyle: 'red',
 				lineWidth: 4,
 				refPoints:
 				[
-					{ name: "p1", x: 50, y: 50 },
-					{ name: "p2", x: 200, y: 200 }
+					{ name: 'p1', x: 50, y: 50 },
+					{ name: 'p2', x: 200, y: 200 }
 				],
 				shape: 'polygon',
-				points:
-				[
-					[ 10, 300 ],
-					[ "@30", "@30" ],
-					[ "@-30", "@0" ]
-				],
+				points: [ { name: 'q1', x: 10, y: 300 }, [ '@30', '@30' ], { ref: 'q1', dx: 0, dy: 30 }, 'close' ],
 				childs: [
-					{
-						fillStyle: null,
-						shape: 'polygon',
-						points:
-						[
-							"p1",
-							[ "@100", "@0" ],
-							{ dx: 0, dy: 100 },
-							{ ref: "p1", dx: 0, y: 150 },
-							"p1"
-						]
-					},
+					{ shape: 'circle', position: 'p1', radius: 20, fillStyle: null },
 					{
 						refPoints:
 						[
-							{ name: "p3", x: 75, y: 200 }
+							{ name: 'p3', x: 75, y: 200 }
 						],
-						shape: 'polygon',
-						points:
-						[
-							"p2",
-							[ "@50", "@0" ],
-							[ "@0", "@50" ],
-							[ "@-50", "@0" ],
-							"close"
-						],
-						lineWidth: 2,
-						fillStyle: "yellow"
+						shape: 'rect', position: 'p2', width: 50, height: 50, lineWidth: 2, fillStyle: 'yellow'
 					},
 					{
-						shape: 'polygon',
-						points:
-						[
-							"p3",
-							[ "@50", "@0" ],
-							[ "@0", "@50" ],
-							[ "@-50", "@0" ],
-							"close"
-						]
+						shape: 'rect', position: 'p3', width: 50, height: 40
 					}
 				]
 			};
 
-			polygons.paint( sample2, "canvas2" );
+			polygons.paint( sample2, 'canvas2' );
 
 			sample2.scale = 0.5;
 			sample2.rotationDeg = 0;
-			polygons.getPrimitives( sample2 ).paint( "canvas3" );
+			polygons.getPrimitives( sample2 ).paint( 'canvas3' );
 
 		</script>
 	</body>

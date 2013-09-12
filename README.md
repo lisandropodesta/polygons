@@ -17,7 +17,7 @@ Paints polygons specified on data into target.
 Simple box example:
 ```javascript
 var polygons = require( "polygons" );
-var data = { polygon: [ [ 10, 10 ], [ "@10", "@0" ], [ "@0", "@10" ], [ "@-10", "@0" ], "close" ] };
+var data = { shape: 'rect', position: [ 10, 10 ], width: 10, height: 10 };
 polygons.paint( data, "canvas_element" );
 ```
 
@@ -29,11 +29,12 @@ var data = {
   fillStyle: "blue", strokeStyle: "red", lineWidth: 4,
 
   refPoints: [ { name: "p1", x: 50, y: 50 }, { name: "p2", x: 200, y: 200 } ],
-  polygon: [ [ 10, 300 ], [ "@30", "@30" ], [ "@-30", "@0" ] ],
+  shape: 'polygon',
+  points: [ [ 10, 300 ], [ "@30", "@30" ], [ "@-30", "@0" ] ],
   childs: [
-    { polygon: [ "p1", [ "@100", "@0" ], { dx: 0, dy: 100 }, { ref: "p1", dx: 0, y: 150 }, "p1" ], fillStyle: null },
-    { refPoints: [ { name: "p3", x: 75, y: 200 } ], polygon: [ "p2", [ "@50", "@0" ], [ "@0", "@50" ], [ "@-50", "@0" ], "close" ], lineWidth: 2, fillStyle: "yellow" },
-    { polygon: [ "p3", [ "@50", "@0" ], [ "@0", "@50" ], [ "@-50", "@0" ], "close" ] }
+    { shape: 'polygon', points: [ "p1", [ "@100", "@0" ], { dx: 0, dy: 100 }, { ref: "p1", dx: 0, y: 150 }, "p1" ], fillStyle: null },
+    { refPoints: [ { name: "p3", x: 75, y: 200 } ], shape: 'rect', points: [ "p2", [ "@50", "@0" ], [ "@0", "@50" ], [ "@-50", "@0" ], "close" ], lineWidth: 2, fillStyle: "yellow" },
+    { shape: 'rect', position: "p3", width: 50, height: 50 }
   ]
 };
 
