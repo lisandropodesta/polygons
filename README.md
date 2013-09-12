@@ -49,7 +49,7 @@ Creates an object containing all primitives required to paint polygons specified
 
 ```javascript
 var polygons = require( "polygons" );
-var data = { polygon: [ [ 10, 10 ], [ "@10", "@0" ], [ "@0", "@10" ], [ "@-10", "@0" ], "close" ] };
+var data = { shape: 'polygon', points: [ [ 10, 10 ], [ "@10", "@0" ], [ "@0", "@10" ], [ "@-10", "@0" ], "close" ] };
 var prim = polygons.getPrimitives( data );
 ...
 prim.paint( "canvas_element" );
@@ -81,7 +81,16 @@ Supported data types are
  * childs: Contains child objects to be painted, must be an array or an object
 
  * refPoints: Array of points to be used as reference by polygons, see below
- * polygon: Array of points that forms the polygon to be painted, see below
+ * shape: characterises the figure, can be 'rect', 'circle', 'arc' and 'polygon'
+ * position: used in shapes 'rect', 'circle' and 'arc'
+ * height: used in shape 'rect'
+ * width: used in shape 'rect'
+ * radius: used in shapes 'circle' and 'arc'
+ * startAngle: used in shape 'arc'
+ * startAngleDeg: used in shape 'arc'
+ * endAngle: used in shape 'arc'
+ * endAngleDeg: used in shape 'arc'
+ * points: Used in shape 'polygon', is the array of points that forms the polygon to be painted, see below
 
 
 #### Coordinates system
