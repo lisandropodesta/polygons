@@ -1,8 +1,9 @@
 //
 // Dependencies
 //
-var canvasTool = require( "canvas-tool" );
-var type = require( "type-tool" );
+var
+  canvasTool = require( "canvas-tool" ),
+  type = require( "type-tool" );
 
 //
 // External references
@@ -179,12 +180,12 @@ Polygons.prototype.paintPolygon = function( attr ) {
   points = attr.points || [];
   switch ( attr.shape ) {
     case "rect":
-      if ( !attr.position || !attr.position.length ) {
+      if ( !attr.position || !attr.position.length || !attr.width || !attr.height ) {
         break;
       }
 
       pt_arr = this.resolvePoints( [ attr.position ], attr );
-      var x = pt_arr[ 0 ].x, y = pt_arr[ 0 ].y, dx = attr.size[ 0 ], dy = attr.size[ 1 ];
+      var x = pt_arr[ 0 ].x, y = pt_arr[ 0 ].y, dx = attr.width, dy = attr.height;
       points = [ [ x, y ], [ x + dx, y ], [ x + dx, y + dy ], [ x, y + dy ], [ x, y ] ];
       // no break
 
