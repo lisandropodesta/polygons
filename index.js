@@ -1,10 +1,8 @@
 //
 // Dependencies
 //
-var
-  autoscale = require( 'autoscale-canvas' ),
-  canvasTool = require( 'canvas-tool' ),
-  type = require( 'type-tool' );
+var canvasTool = require( "canvas-tool" );
+var type = require( "type-tool" );
 
 //
 // External references
@@ -21,6 +19,7 @@ var
 //
 module.exports.paint = polygonsPaint;
 module.exports.getPrimitives = polygonsGetPrimitives;
+module.exports.addRect = addRect;
 
 //
 // Polygon painting attributes
@@ -40,6 +39,19 @@ var POLYGON_ATTR = {
   polygon: false,       // Array of points to be painted
   childs: false         // Contains child objects to be painted
 };
+
+//
+// Angles conversion factor
+//
+var DEG_TO_RAD = Math.PI / 180;
+
+//
+// Gets an angle value from object property
+//
+function getAngle( object, prop, def ) {
+  return prop in object ? object[ prop ] :
+    ( prop + "Deg" ) in object ? DEG_TO_RAD * object[ prop + "Deg" ] : ( def || 0 );
+}
 
 //
 // Paints all polygons specified at data
@@ -62,15 +74,28 @@ function polygonsGetPrimitives( data ) {
 }
 
 //
+// Creates a rectangle
+//
+function addRect( width, height, options ) {
+  return ( new Polygons() ).addRect( width, height, options );
+}
+
+//
 // Polygons constructor
 //
 function Polygons() {
+  this.figures = [];
 }
 
 //
 // Evaluates data structure and paints polygons
 //
 Polygons.prototype.paint = function( data, target ) {
+
+  if ( target === undefined ) {
+    target = data;
+    data = this.figures;
+  }
 
   if ( data ) {
 
@@ -127,11 +152,11 @@ Polygons.prototype.evaluate = function( data, attr ) {
 }
 
 //
-// Paints a single polygon
+// Paints a single shape
 //
 Polygons.prototype.paintPolygon = function( attr ) {
   var
-    i, n, v, t, pt,
+    i, n, v, t, pt, points,
     pt_arr = [],
     ctx = this.context;
 
@@ -140,33 +165,59 @@ Polygons.prototype.paintPolygon = function( attr ) {
     this.resolvePoints( attr.refPoints, attr );
   }
 
-  if ( attr.polygon && 0 <= attr.polygon.length ) {
-
-    // Resolve polygon coordinates
-    pt_arr = this.resolvePoints( attr.polygon, attr );
-
-    // Assign attributes
-    for ( n in attr ) {
-      v = attr[ n ];
-      t = typeGet( v );
-      if ( getAttr( n ) && !t.isArray && !t.isObject ) {
-        ctx[ getAttr( n ) ] = v;
-      }
+  // Assign attributes
+  for ( n in attr ) {
+    v = attr[ n ];
+    t = typeGet( v );
+    if ( getAttr( n ) && !t.isArray && !t.isObject ) {
+      ctx[ getAttr( n ) ] = v;
     }
-
-    // Paints polygon
-    ctx.beginPath();
-    for ( i = 0; i < pt_arr.length; i++ ) {
-      pt = this.transformPoint( pt_arr[ i ], attr );
-      ctx[ !i ? "moveTo" : "lineTo" ]( pt.x, pt.y );
-    }
-
-    if ( attr.fillStyle ) {
-      ctx.fill();
-    }
-
-    ctx.stroke();
   }
+
+  ctx.beginPath();
+
+  points = attr.points || [];
+  switch ( attr.shape ) {
+    case "rect":
+      if ( !attr.position || !attr.position.length ) {
+        break;
+      }
+
+      pt_arr = this.resolvePoints( [ attr.position ], attr );
+      var x = pt_arr[ 0 ].x, y = pt_arr[ 0 ].y, dx = attr.size[ 0 ], dy = attr.size[ 1 ];
+      points = [ [ x, y ], [ x + dx, y ], [ x + dx, y + dy ], [ x, y + dy ], [ x, y ] ];
+      // no break
+
+    case "polygon":
+      if ( 0 <= points.length ) {
+        pt_arr = this.resolvePoints( points, attr );
+        for ( i = 0; i < pt_arr.length; i++ ) {
+          pt = this.transformPoint( pt_arr[ i ], attr );
+          ctx[ !i ? "moveTo" : "lineTo" ]( pt.x, pt.y );
+        }
+      }
+      break;
+
+    case "circle":
+      if ( !attr.position || !attr.radius ) {
+        break;
+      }
+      attr.startAngle = 0;
+      attr.endAngle = 2 * Math.PI;
+      // no break
+
+    case "arc":
+      pt_arr = this.resolvePoints( [ attr.position ], attr );
+      ctx.arc( pt_arr[ 0 ].x, pt_arr[ 0 ].y, attr.radius,
+          -getAngle( attr, "startAngle" ), -getAngle( attr, "endAngle" ), true );
+      break;
+  }
+
+  if ( attr.fillStyle ) {
+    ctx.fill();
+  }
+
+  ctx.stroke();
 }
 
 //
@@ -288,7 +339,7 @@ Polygons.prototype.transformPoint = function( pt, attr ) {
   sy = attr.scaleY || attr.scale || 1;
   rx = attr.refPointX || 0;
   ry = attr.refPointY || 0;
-  rot = attr.rotation || ( ( attr.rotationDeg || 0 ) * Math.PI / 180 );
+  rot = getAngle( attr, "rotation" );
 
   // TO-DO: Support nested transformations
 
