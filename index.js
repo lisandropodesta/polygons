@@ -28,8 +28,6 @@ module.exports.getPrimitives = polygonsGetPrimitives;
 
 var POLYGON_ATTR = {
   scale: true,          // Scale for all axis
-  scaleX: true,         // Scale for x axis
-  scaleY: true,         // Scale for y axis
   offsetX: true,        // Shift for x axis
   offsetY: true,        // Shift for y axis
   rotation: true,       // Rotation angle in radians
@@ -59,8 +57,8 @@ var DEG_TO_RAD = Math.PI / 180;
  */
 
 function getAngle( object, prop, def ) {
-  return prop in object ? object[ prop ] :
-    ( prop + 'Deg' ) in object ? DEG_TO_RAD * object[ prop + 'Deg' ] : ( def || 0 );
+  return - ( prop in object ? object[ prop ] :
+    ( prop + 'Deg' ) in object ? DEG_TO_RAD * object[ prop + 'Deg' ] : ( def || 0 ) );
 }
 
 /**
@@ -247,8 +245,8 @@ Polygons.prototype.paintPolygon = function( attr ) {
 
     case 'arc':
       pt_arr = this.resolvePoints( [ attr.position ], attr );
-      ctx.arc( pt_arr[ 0 ].x, pt_arr[ 0 ].y, attr.radius,
-          -getAngle( attr, 'startAngle' ), -getAngle( attr, 'endAngle' ), true );
+      ctx.arc( pt_arr[ 0 ].x, pt_arr[ 0 ].y, this.transformSize( 'radius', attr ),
+          this.transformAngle( 'startAngle', attr ), this.transformAngle( 'endAngle', attr ), true );
       break;
   }
 
@@ -385,6 +383,30 @@ Polygons.prototype.getCoord = function( ref, name, attr, lastpt ) {
 }
 
 /**
+ * Transform an angle in an attribute context
+ *
+ * @param {string} name Angle name to be transformed
+ * @param {object} attr Painting attributes
+ * @api private
+ */
+
+Polygons.prototype.transformAngle = function( name, attr ) {
+  return getAngle( attr, name ) + getAngle( attr, 'rotation' );
+}
+
+/**
+ * Transform a dimmention in an attribute context
+ *
+ * @param {string} name Dimmention name to be transformed
+ * @param {object} attr Painting attributes
+ * @api private
+ */
+
+Polygons.prototype.transformSize  = function( name, attr ) {
+  return ( attr.scale || 1 ) * attr[ name ];
+}
+
+/**
  * Transform point coordinates in an attribute context
  *
  * @param {object} pt Point to be transformed
@@ -399,8 +421,8 @@ Polygons.prototype.transformPoint = function( pt, attr ) {
   x = pt.x;
   y = pt.y;
 
-  sx = attr.scaleX || attr.scale || 1;
-  sy = attr.scaleY || attr.scale || 1;
+  sx = attr.scale || 1;
+  sy = attr.scale || 1;
   rx = attr.refPointX || 0;
   ry = attr.refPointY || 0;
   rot = getAngle( attr, 'rotation' );
@@ -420,7 +442,7 @@ Polygons.prototype.transformPoint = function( pt, attr ) {
     x -= rx;
     y -= ry;
     h = Math.sqrt( x * x + y * y );
-    a = Math.atan2( y, x ) - rot;
+    a = Math.atan2( y, x ) + rot;
     x = rx + h * Math.cos( a );
     y = ry + h * Math.sin( a );
   }

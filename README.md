@@ -69,8 +69,6 @@ Supported data types are
  * All canvas attributes: fillStyle, strokeStyle, shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY, lineCap, lineJoin, lineWidth, miterLimit, font, textAlign and textBaseline
 
  * scale: Scale for all axis
- * scaleX: Scale for x axis
- * scaleY: Scale for y axis
  * offsetX: Shift for x axis
  * offsetY: Shift for y axis
  * rotation: Rotation angle in radians
