@@ -2,8 +2,8 @@
  * Dependencies
  */
 
-var canvasTool = require( 'canvas-tool' );
-var type = require( 'type-tool' );
+var canvasTool = require( 'lisandropodesta-canvas-tool' );
+var type = require( 'lisandropodesta-type-tool' );
 
 /**
  * External references
