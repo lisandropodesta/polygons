@@ -7,4 +7,9 @@ components: component.json
 clean:
 	@rm -fr build components template.js
 
+wclean:
+	@rd /S /Q build
+	@rd /S /Q components
+	@del template.js
+
 .PHONY: clean
