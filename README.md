@@ -56,7 +56,7 @@ prim.paint( "canvas_element" );
 ```
 
 
-### data structure to paint
+### Data structure to paint
 
 Supported data types are
 
