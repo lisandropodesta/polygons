@@ -17,26 +17,34 @@
 
 			var polygons = require( 'polygons' );
 
-			var sample1 = [
-				{
-					shape: 'rect', position: [ 10, 10 ], width: 200, height: 100,
-					fillStyle: 'green', strokeStyle: 'blue', lineWidth: 2,
-					rotationDeg: 5, refPointX: 110, refPointY: 60
-				},
-				{ shape: 'circle', position: [ 110, 60 ], radius: 40, fillStyle: 'white' },
-				{ shape: 'arc', position: [ 170, 60 ], radius: 20, startAngleDeg: 0, endAngleDeg: 90, fillStyle: null }
-			];
-			polygons.paint( sample1, 'canvas1' );
+			var sample1 = {
+				refPointX: 110, refPointY: 60,
+				childs: [
+					{
+						shape: 'rect', position: [ 10, 10 ], width: 200, height: 100,
+						fillStyle: 'green', strokeStyle: 'blue', lineWidth: 2,
+						rotationDeg: 5
+					},
+					{ shape: 'circle', position: [ 110, 60 ], radius: 40, fillStyle: 'white' },
+					{ shape: 'circle', position: [ 170, 60 ], radius: 10, fillStyle: 'white' },
+					{ shape: 'arc', position: [ 170, 60 ], radius: 20, startAngleDeg: 0, endAngleDeg: 90, fillStyle: null }
+				]
+			};
+
+			polygons.paint( sample1, 'canvas1',  {
+					duration: 0.2,
+					shift: { from: [ 0, 700 ] },
+					scale: { from: 5 },
+					alpha: { from: 0 },
+					rotationDeg: { from: -90 }
+				}
+			);
 
 			var sample2 =
 			{
 				//
 				// Transformation params
 				//
-				scale: 1,
-				offsetX: 0,
-				offsetY: 0,
-				rotationDeg: 45,
 				refPointX: 100,
 				refPointY: 100,
 
@@ -66,11 +74,7 @@
 				]
 			};
 
-			polygons.paint( sample2, 'canvas2' );
-
-			sample2.scale = 0.5;
-			sample2.rotationDeg = 0;
-			polygons.getPrimitives( sample2 ).paint( 'canvas3' );
+			polygons.paint( sample2, 'canvas2', { duration: 0.2, scale: 0.4, rotationDeg: { from: 45, to: -45 } } );
 
 		</script>
 	</body>

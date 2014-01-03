@@ -11,6 +11,8 @@ var type = require( 'lisandropodesta-type-tool' );
 
 var typeGet = type.get;
 var isString = type.isString;
+var isArray = type.isArray;
+var isObject = type.isObject;
 var getAttr = canvasTool.getAttr;
 var getContext = canvasTool.getContext;
 var getPrimitives = canvasTool.getPrimitives;
@@ -27,11 +29,52 @@ module.exports.getPrimitives = polygonsGetPrimitives;
  */
 
 var POLYGON_ATTR = {
-  scale: true,          // Scale for all axis
-  offsetX: true,        // Shift for x axis
-  offsetY: true,        // Shift for y axis
-  rotation: true,       // Rotation angle in radians
-  rotationDeg: true,    // Rotation angle in degrees
+  scale: {              // Scale
+    from: 1,
+    to: 1,
+    put: function ( attr, val ) {
+      if ( 'shift' in attr ) {
+        attr.shift.x *= val;
+        attr.shift.y *= val;
+      }
+      attr.scale = attrGet( attr, 'scale', 1 ) * val;
+    }
+  },
+  alpha: {
+    from: 1,
+    to: 1
+  },
+  shift: {              // Shift
+    array: 2,
+    from: [ 0, 0 ],
+    to: [ 0, 0 ],
+    put: function ( attr, val ) {
+      if ( isArray( val ) ) {
+        if ( !( 'shift' in attr ) ) {
+          attr.shift = { x: 0, y: 0 };
+        }
+        attr.shift.x += val[ 0 ];
+        attr.shift.y += val[ 1 ];
+      }
+    }
+  },
+  rotation: {           // Rotation angle in radians
+    from: 0,
+    to: 0,
+    put: function ( attr, val ) {
+      attr.rotation = -attrAngle( attr, 'rotation', 0 ) + val;
+      attr.rotationDeg = attr.rotation * RAD_TO_DEG;
+    }
+  },
+  rotationDeg: {        // Rotation angle in degrees
+    from: 0,
+    to: 0,
+    put: function ( attr, val ) {
+      attr.rotation = -attrAngle( attr, 'rotation', 0 ) + val * DEG_TO_RAD;
+      attr.rotationDeg = attr.rotation * RAD_TO_DEG;
+    }
+  },
+
   refPointX: true,      // Reference point for transformations x axis coordinate
   refPointY: true,      // Reference point for transformations y axis coordinate
 
@@ -44,21 +87,64 @@ var POLYGON_ATTR = {
  * Angles conversion factor
  */
 
-var DEG_TO_RAD = Math.PI / 180;
+var DEG_TO_RAD = Math.PI / 180,
+  RAD_TO_DEG = 180 / Math.PI;
 
 /**
- * Gets an angle value from object property
+ * Gets a value from attributes object
  *
- * @param {object} object Object containing angle property
+ * @param {object} attr Attributes object
+ * @param {string} prop Property name
+ * @param {number} def Default value
+ * @return {number} Obtained value
+ * @api private
+ */
+
+function attrGet( attr, prop, def ) {
+  return ( prop in attr ? attr[ prop ] : def );
+}
+
+/**
+ * Applies a value into an attributes object
+ *
+ * @param {object} attr Attributes object
+ * @param {string} prop Property name
+ * @param {number} val Value to be assigned
+ * @api private
+ */
+
+function attrPut( attr, prop, val ) {
+  if ( ( prop in POLYGON_ATTR ) && POLYGON_ATTR[ prop ].put ) {
+    POLYGON_ATTR[ prop ].put( attr, val );
+  } else {
+    attr[ prop ] = val;
+  }
+}
+
+/**
+ * Gets an angle value from attributes object
+ *
+ * @param {object} attr Attributes object
  * @param {string} prop Property name
  * @param {number} def Default value
  * @return {number} Angle expressed in radians
  * @api private
  */
 
-function getAngle( object, prop, def ) {
-  return - ( prop in object ? object[ prop ] :
-    ( prop + 'Deg' ) in object ? DEG_TO_RAD * object[ prop + 'Deg' ] : ( def || 0 ) );
+function attrAngle( attr, prop, def ) {
+  return - ( prop in attr ? attr[ prop ] :
+    ( prop + 'Deg' ) in attr ? DEG_TO_RAD * attr[ prop + 'Deg' ] : ( def || 0 ) );
+}
+
+/**
+ * Gets a scale value from attributes object
+ *
+ * @param {object} attr Attributes object
+ * @api private
+ */
+
+function attrScale( attr ) {
+  return attrGet( attr, 'scale', 1 );
 }
 
 /**
@@ -70,9 +156,9 @@ function getAngle( object, prop, def ) {
  * @api public
  */
 
-function polygonsPaint( data, target ) {
+function polygonsPaint( data, target, animation ) {
 
-  ( new Polygons() ).paint( data, target ) ;
+  ( new Polygons() ).paint( data, target, animation ) ;
 }
 
 /**
@@ -90,6 +176,81 @@ function polygonsGetPrimitives( data ) {
   ( new Polygons() ).paint( data, pri );
 
   return pri;
+}
+
+/**
+ * Request Animation Frame
+ *
+ * @param {function} cbk Callback that paints the frame
+ * @api public
+ */
+
+function requestAnimationFrame( cbk ) {
+  return ( window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    window.mozRequestAnimationFrame ||
+    window.oRequestAnimationFrame ||
+    window.msRequestAnimationFrame ||
+    function( cbk ) {
+      window.setTimeout( cbk, 1000 / 30 );
+    } )( cbk );
+};
+
+/**
+ * Get a value matching requeriment
+ *
+ * @param {object} src Data to be processed
+ * @param {string} prop Property name
+ * @param {string} name Attribute name
+ * @api public
+ */
+
+function matchValue( src, prop, name ) {
+  if ( name in src ) {
+    var a1 = !isArray( src[ name ] ) ? -1 : src[ name ].length,
+      a2 = POLYGON_ATTR[ prop ].array || -1;
+    if ( a1 == a2 ) {
+      return src[ name ];
+    }
+  }
+
+  return POLYGON_ATTR[ prop ][ name ];
+}
+
+/**
+ * Get a value associated to an animation step
+ *
+ * @param {ordinal|object} src Data to be processed
+ * @param {string} n Property name
+ * @api public
+ */
+
+function animateValue( src, n, per ) {
+  var a = { finished: true };
+
+  if ( isObject( src ) ) {
+    var cnt = POLYGON_ATTR[ n ].array,
+      from = matchValue( src, n, 'from' ),
+      to = matchValue( src, n, 'to' );
+
+    if ( per >= 1 ) {
+      a.value = to;
+    } else {
+      if ( cnt ) {
+        a.value = [];
+        for ( var i = 0; i < cnt; i++ ) {
+          a.value[ i ] = from[ i ] * ( 1 - per ) + to[ i ] * per;
+        }
+      } else {
+        a.value = from * ( 1 - per ) + to * per;
+      }
+      a.finished = false;
+    }
+  } else {
+    a.value = src;
+  }
+
+  return a;
 }
 
 /**
@@ -111,7 +272,7 @@ function Polygons() {
  * @api public
  */
 
-Polygons.prototype.paint = function( data, target ) {
+Polygons.prototype.paint = function( data, target, animation ) {
 
   if ( target === undefined ) {
     target = data;
@@ -120,17 +281,63 @@ Polygons.prototype.paint = function( data, target ) {
 
   if ( data ) {
 
+    if ( isString( target ) ) {
+      var e = document.getElementById( target );
+      if ( e ) {
+        this.width = e.width;
+        this.height = e.height;
+      }
+    }
+
     // Assign context
     this.context = getContext( target );
     if ( !this.context ) {
       throw new TypeError( 'Polygons.paint() requires a canvas' );
     }
 
-    // Initialize reference points
-    this.refPoints = {};
+    var that = this,
+      start = ( new Date() ).getTime(),
+      duration = ( animation && animation.duration > 0 ? animation.duration * 1000 : 0 );
 
-    // Evaluates data
-    this.evaluate( data, {} );
+    function paintFrame() {
+
+      var attr = {};
+
+      // Initialize reference points
+      that.refPoints = {};
+      that.context.clearRect( 0, 0, that.width, that.height );
+
+      var per = 1;
+      if ( duration ) {
+        var per = ( ( new Date() ).getTime() - start ) / duration;
+      }
+
+      var finished = true;
+      for ( var n in POLYGON_ATTR ) {
+        if ( ( n in animation ) ) {
+          var a = animateValue( animation[ n ], n, per );
+          attrPut( attr, n, a.value );
+          finished = finished && a.finished;
+        }
+      }
+
+      if ( 'alpha' in attr ) {
+        that.context.globalAlpha = attr [ 'alpha' ];
+      }
+
+      // Evaluates data
+      that.evaluate( data, attr );
+
+      if ( !finished ) {
+        requestAnimationFrame( paintFrame );
+      }
+    }
+
+    if ( duration ) {
+      requestAnimationFrame( paintFrame );
+    } else {
+      paintFrame();
+    }
   }
 }
 
@@ -164,7 +371,7 @@ Polygons.prototype.evaluate = function( data, attr ) {
 
     // Stores attr asignments
     for ( n in data ) {
-      attr[ n ] = data[ n ];
+      attrPut( attr, n, data[ n ] );
     }
 
     // Paints main object
@@ -227,10 +434,11 @@ Polygons.prototype.paintPolygon = function( attr ) {
 
     case 'polygon':
       if ( 0 <= points.length ) {
-        pt_arr = this.resolvePoints( points, attr );
-        for ( i = 0; i < pt_arr.length; i++ ) {
-          pt = this.transformPoint( pt_arr[ i ], attr );
-          ctx[ !i ? 'moveTo' : 'lineTo' ]( pt.x, pt.y );
+        pt_arr = this.transformPoints( this.resolvePoints( points, attr ), attr );
+        ctx.moveTo( pt_arr[ 0 ].x, pt_arr[ 0 ].y );
+        for ( i = 1; i < pt_arr.length; i++ ) {
+          pt = pt_arr[ i ];
+          ctx.lineTo( pt.x, pt.y );
         }
       }
       break;
@@ -244,7 +452,7 @@ Polygons.prototype.paintPolygon = function( attr ) {
       // no break
 
     case 'arc':
-      pt_arr = this.resolvePoints( [ attr.position ], attr );
+      pt_arr = this.transformPoints( this.resolvePoints( [ attr.position ], attr ), attr );
       ctx.arc( pt_arr[ 0 ].x, pt_arr[ 0 ].y, this.transformSize( 'radius', attr ),
           this.transformAngle( 'startAngle', attr ), this.transformAngle( 'endAngle', attr ), true );
       break;
@@ -391,7 +599,7 @@ Polygons.prototype.getCoord = function( ref, name, attr, lastpt ) {
  */
 
 Polygons.prototype.transformAngle = function( name, attr ) {
-  return getAngle( attr, name ) + getAngle( attr, 'rotation' );
+  return attrAngle( attr, name ) + attrAngle( attr, 'rotation' );
 }
 
 /**
@@ -403,7 +611,25 @@ Polygons.prototype.transformAngle = function( name, attr ) {
  */
 
 Polygons.prototype.transformSize  = function( name, attr ) {
-  return ( attr.scale || 1 ) * attr[ name ];
+  return attrScale( attr ) * attr[ name ];
+}
+
+/**
+ * Transform point coordinates in an attribute context
+ *
+ * @param {array} arr Array of points to resolve
+ * @param {object} attr Painting attributes
+ * @api private
+ */
+
+Polygons.prototype.transformPoints = function( arr, attr ) {
+  var res = [];
+
+  for ( var i = 0; i < arr.length; i++ ) {
+    res.push( this.transformPoint( arr[ i ], attr ) );
+  }
+
+  return res;
 }
 
 /**
@@ -421,13 +647,10 @@ Polygons.prototype.transformPoint = function( pt, attr ) {
   x = pt.x;
   y = pt.y;
 
-  sx = attr.scale || 1;
-  sy = attr.scale || 1;
+  sx = sy = attrScale( attr );
   rx = attr.refPointX || 0;
   ry = attr.refPointY || 0;
-  rot = getAngle( attr, 'rotation' );
-
-  // TO-DO: Support nested transformations
+  rot = attrAngle( attr, 'rotation' );
 
   // Scaling
   if ( sx != 1 ) {
@@ -448,8 +671,10 @@ Polygons.prototype.transformPoint = function( pt, attr ) {
   }
 
   // Offset
-  x += ( attr.offsetX || 0 );
-  y += ( attr.offsetY || 0 );
+  if ( isObject( attr.shift ) ) {
+    x += attr.shift.x;
+    y += attr.shift.y;
+  }
 
   return { x: x, y: y };
 }
