@@ -32,19 +32,14 @@
 			};
 
 			polygons.paint( sample1, 'canvas1',  {
-					duration: 0.2,
-					shift: { from: [ 0, 700 ] },
-					scale: { from: 5 },
-					alpha: { from: 0 },
-					rotationDeg: { from: -90 }
-				}
-			);
+				duration: 0.2,
+				shift: { from: [ 0, 700 ] },
+				scale: { from: 5 },
+				alpha: { from: 0 },
+				rotationDeg: { from: -90 }
+			} );
 
-			var sample2 =
-			{
-				//
-				// Transformation params
-				//
+			var sample2 = {
 				refPointX: 100,
 				refPointY: 100,
 
@@ -74,7 +69,12 @@
 				]
 			};
 
-			polygons.paint( sample2, 'canvas2', { duration: 0.2, scale: 0.4, rotationDeg: { from: 45, to: -45 } } );
+			polygons.paint( sample2, 'canvas2', {
+				duration: 0.3,
+				shift: { from: [ 150, 100 ], to: [ 150, 150 ] },
+				scale: 0.9,
+				alpha: { from: 0 },
+				rotationDeg: { from: -30, to: -45 } } );
 
 		</script>
 	</body>
